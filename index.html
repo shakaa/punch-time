@@ -3,116 +3,992 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Time Punch</title>
+  <title>Botanical San Miguel • Time Clock</title>
   <style>
-    body{font-family:-apple-system,BlinkMacSystemFont,system-ui,"Segoe UI",sans-serif;background:#f5f5f5;margin:0;padding:16px}
-    .card{max-width:720px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.08);padding:16px}
-    h1{text-align:center;font-size:20px;margin:0 0 10px}
-    .field{margin-bottom:10px}
-    label{font-size:12px;color:#555}
-    input{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:12px;font-size:14px}
-    .pill{display:inline-block;padding:6px 10px;border-radius:999px;font-size:13px}
-    .ok{background:#e8f5e9}
-    .bad{background:#ffebee}
-    .mid{background:#e3f2fd}
-    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:center;margin:10px 0}
-    button{flex:1;min-width:140px;padding:14px;border:0;border-radius:999px;font-size:16px}
-    button:disabled{opacity:.5}
-    .in{background:#2e7d32;color:#fff}
-    .out{background:#c62828;color:#fff}
-    .break{background:#1565c0;color:#fff}
-    table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
-    th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
-    .smallbtn{padding:10px 12px;font-size:13px;background:#1976d2;color:#fff;border-radius:999px;border:0}
+    :root{
+      --bg:#f5f5f5; --card:#fff; --text:#111; --muted:#666; --border:#e9e9e9;
+      --good:#e8f5e9; --bad:#ffebee; --mid:#e3f2fd;
+      --btnIn:#2e7d32; --btnOut:#c62828; --btnBreak:#1565c0; --btnAlt:#1976d2;
+      --danger:#d32f2f;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;padding:16px;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,system-ui,"Segoe UI",sans-serif}
+    .wrap{max-width:1180px;margin:0 auto}
+    .card{background:var(--card);border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.08);padding:16px}
+    .brand{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:12px}
+    .brand h1{margin:0;font-size:18px}
+    .brand .sub{font-size:12px;color:var(--muted)}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;font-size:13px;white-space:nowrap}
+    .ok{background:var(--good)} .bad{background:var(--bad)} .mid{background:var(--mid)}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    .controls{display:grid;grid-template-columns: 1.2fr 1fr 1fr;gap:10px;margin-top:10px}
+    @media (max-width:920px){ .controls{grid-template-columns:1fr} }
+    label{display:block;font-size:12px;color:#555;margin-bottom:4px}
+    select,input{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:12px;font-size:14px;background:#fff}
+    .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    button{border:0;border-radius:999px;padding:12px 14px;font-size:15px;cursor:pointer;flex:1;min-width:160px}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    .in{background:var(--btnIn);color:#fff}
+    .out{background:var(--btnOut);color:#fff}
+    .break{background:var(--btnBreak);color:#fff}
+    .alt{background:var(--btnAlt);color:#fff;flex:none;min-width:auto}
+    .ghost{background:#f0f0f0;color:#111;flex:none;min-width:auto}
+    .danger{background:var(--danger);color:#fff;flex:none;min-width:auto}
+    .muted{color:var(--muted);font-size:12px}
+    .grid2{display:grid;grid-template-columns:1.35fr .85fr;gap:12px;margin-top:12px}
+    @media (max-width:1000px){ .grid2{grid-template-columns:1fr} }
+    table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+    th,td{padding:10px 8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+    th{font-size:12px;color:#444}
+    .totals{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px}
+    @media (max-width:920px){ .totals{grid-template-columns:1fr} }
+    .kpi{background:#fafafa;border:1px solid var(--border);border-radius:14px;padding:10px}
+    .kpi .k{font-size:12px;color:#555}
+    .kpi .v{font-size:18px;font-weight:800;margin-top:4px}
+    .warn{margin-top:12px;padding:10px;border-radius:14px;background:#fff8e1;font-size:13px;border:1px solid #f3e4a6}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+    .managerBar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+    .tag{font-size:12px;color:#333;background:#f6f6f6;border:1px solid var(--border);padding:6px 10px;border-radius:999px}
+    .hidden{display:none !important}
+    .panel{border:1px solid var(--border);border-radius:14px;padding:10px;background:#fafafa;margin-top:10px}
+    .panel h3{margin:0 0 8px 0;font-size:14px}
+    .smallbtn{padding:10px 12px;font-size:13px;border-radius:999px;border:0}
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Time Punch</h1>
+  <div class="wrap">
+    <div class="card">
+      <div class="brand">
+        <div>
+          <h1>Botanical San Miguel • Time Clock</h1>
+          <div class="sub">Multi-staff • Worker PIN • Manager mode • Weekly totals + overtime • Import weekly CSVs (manager)</div>
+        </div>
+        <div class="managerBar">
+          <span id="statusPill" class="pill bad">Off the clock</span>
+          <span class="pill" id="weekPill">Week: —</span>
+          <span id="mgrTag" class="tag hidden">Manager Mode</span>
+          <button id="mgrBtn" class="alt">Manager Login</button>
+          <button id="mgrLogoutBtn" class="ghost hidden">Lock</button>
+        </div>
+      </div>
 
-    <div class="field">
-      <label>Worker Name</label>
-      <input id="worker" placeholder="Enter worker name" />
-    </div>
+      <div class="controls">
+        <div>
+          <label for="workerSelect">Worker</label>
+          <select id="workerSelect"></select>
 
-    <div class="row" style="justify-content:space-between">
-      <div>Status: <span id="status" class="pill bad">Off the clock</span></div>
-      <div id="today"></div>
-    </div>
+          <div class="row" style="gap:8px;margin-top:8px">
+            <button id="addWorkerBtn" class="alt managerOnly hidden">+ Add Worker</button>
+            <button id="renameWorkerBtn" class="ghost managerOnly hidden">Rename</button>
+            <button id="removeWorkerBtn" class="danger managerOnly hidden">Remove</button>
+            <button id="resetPinBtn" class="ghost managerOnly hidden">Reset PIN</button>
+          </div>
 
-    <div class="row">
-      <button id="inBtn" class="in">Punch In</button>
-      <button id="outBtn" class="out" disabled>Punch Out</button>
-    </div>
+          <div class="row" style="gap:8px;margin-top:10px">
+            <div style="flex:1;min-width:220px">
+              <label for="pinInput">Worker PIN</label>
+              <input id="pinInput" inputmode="numeric" pattern="[0-9]*" placeholder="Enter PIN to punch" />
+              <div class="muted" id="pinHint">PIN is required to Punch In/Out and Break.</div>
+            </div>
+            <div style="flex:none;min-width:180px;align-self:end">
+              <button id="setPinBtn" class="ghost">Set / Change PIN</button>
+            </div>
+          </div>
 
-    <div class="row">
-      <button id="breakIn" class="break" disabled>Start Meal Break</button>
-      <button id="breakOut" class="break" disabled>End Meal Break</button>
-    </div>
+          <div class="muted" style="margin-top:6px">
+            Tip: each worker uses their own phone. Manager can import weekly CSVs to combine totals on a manager device.
+          </div>
+        </div>
 
-    <table>
-      <thead>
-        <tr><th>In</th><th>Break</th><th>Out</th><th>Net Hours</th></tr>
-      </thead>
-      <tbody id="log"></tbody>
-    </table>
+        <div>
+          <label for="jobInput">Job / Role (optional)</label>
+          <input id="jobInput" placeholder="e.g., Cashier, Inventory, Delivery" />
+          <div class="muted" style="margin-top:6px">Saved with each shift (editable in Manager Mode).</div>
+        </div>
 
-    <div class="row">
-      <button id="export" class="smallbtn">Export CSV</button>
+        <div>
+          <label for="weekStart">Week starting (Mon)</label>
+          <input id="weekStart" type="date" />
+          <div class="row" style="gap:8px;margin-top:8px">
+            <button id="thisWeekBtn" class="alt">This Week</button>
+            <button id="prevWeekBtn" class="ghost">◀︎</button>
+            <button id="nextWeekBtn" class="ghost">▶︎</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="btnrow">
+        <button id="punchInBtn" class="in">Punch In</button>
+        <button id="punchOutBtn" class="out" disabled>Punch Out</button>
+      </div>
+      <div class="btnrow">
+        <button id="breakStartBtn" class="break" disabled>Start Meal Break</button>
+        <button id="breakEndBtn" class="break" disabled>End Meal Break</button>
+      </div>
+
+      <div class="totals">
+        <div class="kpi">
+          <div class="k">Selected Worker • Weekly Net Hours</div>
+          <div class="v" id="weeklyHours">0.00</div>
+          <div class="muted" id="workerHint"></div>
+        </div>
+        <div class="kpi">
+          <div class="k">Selected Worker • Weekly Overtime Hours (40+)</div>
+          <div class="v" id="weeklyOT">0.00</div>
+          <div class="muted">OT = max(0, weekly hours − 40)</div>
+        </div>
+        <div class="kpi">
+          <div class="k">On-clock since</div>
+          <div class="v" style="font-size:14px;font-weight:800" id="since">—</div>
+          <div class="muted">Punch out is disabled during meal break.</div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <div class="row" style="justify-content:space-between">
+            <strong style="font-size:14px">Weekly Shifts</strong>
+            <div class="row" style="gap:8px">
+              <button id="exportWeekBtn" class="alt">Export Week CSV</button>
+              <button id="exportAllBtn" class="ghost">Export All</button>
+              <button id="clearWeekBtn" class="ghost managerOnly hidden">Clear Week</button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Worker</th><th>Date</th><th>In</th><th>Break</th><th>Out</th><th>Break (min)</th><th>Net (hrs)</th><th>Job</th><th class="managerOnly hidden">Edit</th>
+              </tr>
+            </thead>
+            <tbody id="shiftBody"></tbody>
+          </table>
+          <div class="muted" style="margin-top:8px">Manager can import weekly CSVs from staff phones to combine totals here.</div>
+        </div>
+
+        <div>
+          <strong style="font-size:14px">Weekly Summary (All Workers)</strong>
+          <table>
+            <thead>
+              <tr><th>Worker</th><th>Net</th><th>Regular</th><th>OT</th></tr>
+            </thead>
+            <tbody id="summaryBody"></tbody>
+          </table>
+
+          <div class="panel managerOnly hidden" id="importPanel">
+            <h3>Import staff weekly CSVs</h3>
+            <div class="muted" style="margin-bottom:8px">
+              On each worker phone: Export Week CSV → send to manager. Here: import them to combine everyone’s hours.
+            </div>
+            <input id="importFiles" type="file" accept=".csv,text/csv" multiple />
+            <div class="row" style="gap:8px;margin-top:10px">
+              <button id="importBtn" class="alt smallbtn">Import Selected CSVs</button>
+              <button id="clearImportedWeekBtn" class="danger smallbtn">Remove Imported Week</button>
+            </div>
+            <div class="muted" id="importResult" style="margin-top:8px"></div>
+          </div>
+
+          <div class="warn">
+            <strong>Note about “each worker uses their own phone”</strong>
+            <ul style="margin:8px 0 0 18px">
+              <li>Entries do <em>not</em> sync automatically across phones.</li>
+              <li>This import feature lets the manager combine weekly CSVs into one place for payroll.</li>
+              <li>Import deduplicates shifts (won’t double-add if you import the same file twice).</li>
+            </ul>
+          </div>
+
+          <div class="muted" id="diag" style="margin-top:10px"></div>
+        </div>
+      </div>
     </div>
   </div>
 
 <script>
-const KEY="tp_worker_simple";
-const META="tp_worker_name";
-const $=id=>document.getElementById(id);
+(() => {
+  // ---------------- Storage keys ----------------
+  const WORKERS_KEY = "bsm_workers_v3";
+  const ENTRIES_KEY = "bsm_entries_v3";
+  const MANAGER_KEY = "bsm_manager_pin_v1";
 
-function load(){return JSON.parse(localStorage.getItem(KEY)||"[]")}
-function save(d){localStorage.setItem(KEY,JSON.stringify(d))}
+  // ---------------- Storage availability ----------------
+  function canUseLocalStorage(){
+    try{ localStorage.setItem("__bsm_test__", "1"); localStorage.removeItem("__bsm_test__"); return true; }
+    catch(e){ return false; }
+  }
+  const HAS_LS = canUseLocalStorage();
+  const mem = { workers: [], entries: [], mgrPin: "" };
 
-function today(){return new Date().toLocaleDateString()}
-$("today").textContent=today();
+  function loadJSON(key, fallback){
+    if(!HAS_LS) return fallback;
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  }
+  function saveJSON(key, val){
+    if(!HAS_LS) return;
+    localStorage.setItem(key, JSON.stringify(val));
+  }
 
-$("worker").value=localStorage.getItem(META)||"";
-$("worker").oninput=e=>localStorage.setItem(META,e.target.value);
+  function uuid(){
+    return (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + "_" + Math.random().toString(16).slice(2));
+  }
 
-function render(){
- const d=load(), open=d.find(x=>!x.out);
- $("status").textContent=open?"On the clock":"Off the clock";
- $("status").className="pill "+(open?"ok":"bad");
- $("inBtn").disabled=!!open;
- $("outBtn").disabled=!open || (open&&open.bs&&!open.be);
- $("breakIn").disabled=!open || open.bs;
- $("breakOut").disabled=!(open&&open.bs&&!open.be);
- const tb=$("log"); tb.innerHTML="";
- d.forEach(e=>{
-  const tr=document.createElement("tr");
-  const hrs=e.out?(((new Date(e.out)-new Date(e.in))-(e.bs&&e.be?(new Date(e.be)-new Date(e.bs)):0))/36e5).toFixed(2):"";
-  tr.innerHTML=`<td>${new Date(e.in).toLocaleTimeString()}</td>
-                <td>${e.bs?new Date(e.bs).toLocaleTimeString():""}${e.be?"-"+new Date(e.be).toLocaleTimeString():""}</td>
-                <td>${e.out?new Date(e.out).toLocaleTimeString():""}</td>
-                <td>${hrs}</td>`;
-  tb.appendChild(tr);
- });
-}
+  // ---------------- Data models ----------------
+  // Worker: { id, name, pin }
+  // Entry:  { id, workerId, job, date, in, out, break_start, break_end, source }
 
-$("inBtn").onclick=()=>{const d=load();d.push({in:new Date(),out:null,bs:null,be:null});save(d);render();}
-$("outBtn").onclick=()=>{const d=load();d.find(x=>!x.out).out=new Date();save(d);render();}
-$("breakIn").onclick=()=>{const d=load();d.find(x=>!x.out).bs=new Date();save(d);render();}
-$("breakOut").onclick=()=>{const d=load();d.find(x=>!x.out).be=new Date();save(d);render();}
+  function loadWorkers(){
+    const w = HAS_LS ? loadJSON(WORKERS_KEY, []) : mem.workers;
+    if(!w.length){
+      w.push({ id: uuid(), name: "Worker 1", pin: "" });
+      if(HAS_LS) saveJSON(WORKERS_KEY, w); else mem.workers = w;
+    }
+    return w;
+  }
+  function saveWorkers(w){ if(HAS_LS) saveJSON(WORKERS_KEY, w); else mem.workers = w; }
 
-$("export").onclick=()=>{
- const name=localStorage.getItem(META)||"";
- let csv="Worker,In,Break Start,Break End,Out,Net Hours\n";
- load().forEach(e=>{
-  const hrs=e.out?(((new Date(e.out)-new Date(e.in))-(e.bs&&e.be?(new Date(e.be)-new Date(e.bs)):0))/36e5).toFixed(2):"";
-  csv+=`"${name}",${new Date(e.in).toISOString()},${e.bs?new Date(e.bs).toISOString():""},${e.be?new Date(e.be).toISOString():""},${e.out?new Date(e.out).toISOString():""},${hrs}\n`;
- });
- const b=new Blob([csv]); const a=document.createElement("a");
- a.href=URL.createObjectURL(b); a.download="time_log.csv"; a.click();
-}
+  function loadEntries(){ return HAS_LS ? loadJSON(ENTRIES_KEY, []) : mem.entries; }
+  function saveEntries(e){ if(HAS_LS) saveJSON(ENTRIES_KEY, e); else mem.entries = e; }
 
-render();
+  function loadManagerPin(){ return HAS_LS ? (loadJSON(MANAGER_KEY, "") || "") : mem.mgrPin; }
+  function saveManagerPin(pin){ if(HAS_LS) saveJSON(MANAGER_KEY, pin); else mem.mgrPin = pin; }
+
+  // ---------------- DOM ----------------
+  const $ = (id) => document.getElementById(id);
+  const workerSelect = $("workerSelect");
+  const pinInput = $("pinInput");
+  const pinHint = $("pinHint");
+  const jobInput = $("jobInput");
+  const weekStartInput = $("weekStart");
+
+  const weekPill = $("weekPill");
+  const statusPill = $("statusPill");
+  const sinceEl = $("since");
+  const weeklyHoursEl = $("weeklyHours");
+  const weeklyOTEl = $("weeklyOT");
+  const workerHintEl = $("workerHint");
+
+  const shiftBody = $("shiftBody");
+  const summaryBody = $("summaryBody");
+  const diagEl = $("diag");
+
+  const punchInBtn = $("punchInBtn");
+  const punchOutBtn = $("punchOutBtn");
+  const breakStartBtn = $("breakStartBtn");
+  const breakEndBtn = $("breakEndBtn");
+
+  const mgrBtn = $("mgrBtn");
+  const mgrLogoutBtn = $("mgrLogoutBtn");
+  const mgrTag = $("mgrTag");
+
+  const importFiles = $("importFiles");
+  const importBtn = $("importBtn");
+  const importResult = $("importResult");
+  const clearImportedWeekBtn = $("clearImportedWeekBtn");
+
+  let isManager = false;
+
+  // ---------------- Helpers ----------------
+  function pad2(n){ return String(n).padStart(2,"0"); }
+  function localISODate(d){
+    const yyyy = d.getFullYear(), mm = pad2(d.getMonth()+1), dd = pad2(d.getDate());
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  function fmtTime(d){ return d.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"}); }
+  function fmtDate(d){ return d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}); }
+
+  function mondayOf(date){
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = (day === 0 ? -6 : 1 - day);
+    d.setDate(d.getDate() + diff);
+    d.setHours(0,0,0,0);
+    return d;
+  }
+  function addDays(date, n){ const d = new Date(date); d.setDate(d.getDate()+n); return d; }
+  function parseDateInput(val){
+    const [y,m,dd] = val.split("-").map(Number);
+    const d = new Date(y, m-1, dd);
+    d.setHours(0,0,0,0);
+    return d;
+  }
+  function dateInWeek(isoDate, weekStart){
+    const d = parseDateInput(isoDate);
+    const start = new Date(weekStart);
+    const end = addDays(start, 7);
+    return d >= start && d < end;
+  }
+  function minutesBetween(aISO, bISO){
+    return Math.max(0, Math.round((new Date(bISO) - new Date(aISO)) / 60000));
+  }
+  function breakMin(entry){
+    return (entry.break_start && entry.break_end) ? minutesBetween(entry.break_start, entry.break_end) : 0;
+  }
+  function netHours(entry){
+    if(!entry.out) return null;
+    const inD = new Date(entry.in);
+    const outD = new Date(entry.out);
+    const totalMs = Math.max(0, outD - inD);
+    const bMin = (entry.break_start && entry.break_end) ? breakMin(entry) : 0;
+    const netMs = Math.max(0, totalMs - bMin * 60000);
+    return netMs / 36e5;
+  }
+  function escapeHtml(s){
+    return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+  }
+
+  // ---------------- Worker / selection ----------------
+  function selectedWorkerId(){ return workerSelect.value; } // "ALL" or workerId
+  function getWorker(workers, id){ return workers.find(w => w.id === id) || null; }
+  function getWorkerByName(workers, name){ return workers.find(w => (w.name || "").trim().toLowerCase() === name.trim().toLowerCase()) || null; }
+  function getWorkerName(workers, id){ const w = getWorker(workers,id); return w ? w.name : "(Unknown)"; }
+  function openShiftForWorker(workerId, entries){ return entries.find(e => e.workerId === workerId && !e.out); }
+
+  // ---------------- Manager mode ----------------
+  function showManagerUI(on){
+    isManager = on;
+    mgrTag.classList.toggle("hidden", !on);
+    mgrBtn.classList.toggle("hidden", on);
+    mgrLogoutBtn.classList.toggle("hidden", !on);
+    document.querySelectorAll(".managerOnly").forEach(el => el.classList.toggle("hidden", !on));
+    refresh();
+  }
+
+  function ensureManagerPinExists(){
+    let pin = loadManagerPin();
+    if(pin) return;
+    const set = prompt("Set a Manager PIN (numbers only). Unlocks Manager Mode on THIS device:");
+    if(!set) return;
+    saveManagerPin(set.trim());
+    alert("Manager PIN saved on this device.");
+  }
+
+  function managerLogin(){
+    ensureManagerPinExists();
+    const stored = loadManagerPin();
+    if(!stored){ alert("No manager PIN set yet."); return; }
+    const entered = prompt("Enter Manager PIN:");
+    if(entered === null) return;
+    if(entered.trim() !== stored){ alert("Wrong Manager PIN."); return; }
+    showManagerUI(true);
+  }
+
+  function managerLogout(){ showManagerUI(false); }
+
+  // ---------------- PIN verification ----------------
+  function requireWorkerSelected(){
+    const sel = selectedWorkerId();
+    if(sel === "ALL"){ alert("Select a worker first."); return null; }
+    return sel;
+  }
+
+  function verifyWorkerPinOrAlert(workers, workerId){
+    const w = getWorker(workers, workerId);
+    if(!w){ alert("Worker not found."); return false; }
+    const entered = (pinInput.value || "").trim();
+    if(!w.pin){ alert("No PIN set for this worker yet. Tap “Set / Change PIN”."); return false; }
+    if(entered !== w.pin){ alert("Wrong PIN."); return false; }
+    return true;
+  }
+
+  function setOrChangePin(){
+    const workers = loadWorkers();
+    const sel = requireWorkerSelected();
+    if(!sel) return;
+    const w = getWorker(workers, sel);
+    if(!w){ alert("Worker not found."); return; }
+
+    if(w.pin && !isManager){
+      const current = prompt("Enter current PIN to change it:");
+      if(current === null) return;
+      if(current.trim() !== w.pin){ alert("Wrong current PIN."); return; }
+    }
+
+    const newPin = prompt("Set new PIN (numbers only):");
+    if(newPin === null) return;
+    const pin = newPin.trim();
+    if(!pin){ alert("PIN cannot be blank."); return; }
+    w.pin = pin;
+    saveWorkers(workers);
+    alert("PIN updated.");
+    pinInput.value = "";
+    refresh();
+  }
+
+  function resetPinManager(){
+    if(!isManager){ alert("Manager Mode required."); return; }
+    const workers = loadWorkers();
+    const sel = requireWorkerSelected();
+    if(!sel) return;
+    const w = getWorker(workers, sel);
+    if(!w){ alert("Worker not found."); return; }
+    if(!confirm(`Reset PIN for ${w.name}? They will need to set a new one.`)) return;
+    w.pin = "";
+    saveWorkers(workers);
+    pinInput.value = "";
+    refresh();
+  }
+
+  // ---------------- UI state ----------------
+  function setStatus(openShift){
+    if(!openShift){
+      statusPill.textContent = "Off the clock";
+      statusPill.className = "pill bad";
+      sinceEl.textContent = "—";
+      return;
+    }
+    if(openShift.break_start && !openShift.break_end){
+      statusPill.textContent = "On meal break";
+      statusPill.className = "pill mid";
+    }else{
+      statusPill.textContent = "On the clock";
+      statusPill.className = "pill ok";
+    }
+    sinceEl.textContent = fmtTime(new Date(openShift.in));
+  }
+
+  function setWeekUI(weekStart){
+    const start = new Date(weekStart);
+    const end = addDays(start, 6);
+    weekPill.textContent = `Week: ${start.toLocaleDateString(undefined,{month:"short",day:"numeric"})}–${end.toLocaleDateString(undefined,{month:"short",day:"numeric"})}`;
+    weekStartInput.value = localISODate(start);
+  }
+
+  function calcWeeklyForWorker(entries, weekStart, workerId){
+    const inWeek = entries.filter(e => dateInWeek(e.date, weekStart) && e.workerId === workerId);
+    const hrs = inWeek.reduce((sum,e)=> sum + (netHours(e) ?? 0), 0);
+    const ot = Math.max(0, hrs - 40);
+    const reg = hrs - ot;
+    return { hrs, reg, ot };
+  }
+
+  function renderTables(entries, workers, weekStart){
+    const sel = selectedWorkerId();
+
+    const rows = entries
+      .filter(e => dateInWeek(e.date, weekStart))
+      .filter(e => sel === "ALL" ? true : e.workerId === sel)
+      .sort((a,b)=> (a.date === b.date ? (new Date(a.in) - new Date(b.in)) : a.date.localeCompare(b.date)));
+
+    shiftBody.innerHTML = "";
+    for(const e of rows){
+      const tr = document.createElement("tr");
+      const wname = getWorkerName(workers, e.workerId);
+      const inT = fmtTime(new Date(e.in));
+      const outT = e.out ? fmtTime(new Date(e.out)) : "—";
+      let br = "—";
+      if(e.break_start && e.break_end) br = fmtTime(new Date(e.break_start)) + "–" + fmtTime(new Date(e.break_end));
+      else if(e.break_start && !e.break_end) br = fmtTime(new Date(e.break_start)) + "–…";
+      const bmin = breakMin(e);
+      const nh = netHours(e);
+
+      const editCell = isManager ? `<td><button class="ghost" data-edit="${e.id}" style="min-width:auto;flex:none;padding:8px 10px">Edit</button></td>` : "";
+      tr.innerHTML = `
+        <td>${escapeHtml(wname)}</td>
+        <td>${fmtDate(parseDateInput(e.date))}</td>
+        <td>${inT}</td>
+        <td>${br}</td>
+        <td>${outT}</td>
+        <td>${bmin}</td>
+        <td>${nh === null ? "—" : nh.toFixed(2)}</td>
+        <td>${escapeHtml(e.job || "")}</td>
+        ${editCell}
+      `;
+      shiftBody.appendChild(tr);
+    }
+
+    // Summary (all workers)
+    summaryBody.innerHTML = "";
+    const summary = workers.map(w => {
+      const t = calcWeeklyForWorker(entries, weekStart, w.id);
+      return { name: w.name, hrs: t.hrs, reg: t.reg, ot: t.ot };
+    }).sort((a,b)=> b.hrs - a.hrs);
+
+    for(const r of summary){
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${escapeHtml(r.name)}</td><td>${r.hrs.toFixed(2)}</td><td>${r.reg.toFixed(2)}</td><td>${r.ot.toFixed(2)}</td>`;
+      summaryBody.appendChild(tr);
+    }
+
+    if(isManager){
+      shiftBody.querySelectorAll("button[data-edit]").forEach(btn => {
+        btn.addEventListener("click", () => editEntry(btn.getAttribute("data-edit")));
+      });
+    }
+  }
+
+  function calcKpis(entries, workers, weekStart){
+    const sel = selectedWorkerId();
+    if(sel === "ALL"){
+      weeklyHoursEl.textContent = "0.00";
+      weeklyOTEl.textContent = "0.00";
+      workerHintEl.textContent = "Select a worker to see their weekly total";
+      return;
+    }
+    const t = calcWeeklyForWorker(entries, weekStart, sel);
+    weeklyHoursEl.textContent = t.hrs.toFixed(2);
+    weeklyOTEl.textContent = t.ot.toFixed(2);
+    workerHintEl.textContent = getWorkerName(workers, sel);
+  }
+
+  function refresh(){
+    const workers = loadWorkers();
+    const entries = loadEntries();
+    const weekStart = parseDateInput(weekStartInput.value);
+
+    const prevSel = workerSelect.value || "ALL";
+    workerSelect.innerHTML = "";
+    const optAll = document.createElement("option");
+    optAll.value = "ALL";
+    optAll.textContent = "All Workers (view only)";
+    workerSelect.appendChild(optAll);
+    for(const w of workers){
+      const opt = document.createElement("option");
+      opt.value = w.id;
+      opt.textContent = w.name;
+      workerSelect.appendChild(opt);
+    }
+    workerSelect.value = ([...workerSelect.options].some(o=>o.value===prevSel) ? prevSel : "ALL");
+
+    const sel = selectedWorkerId();
+    const open = (sel === "ALL") ? null : openShiftForWorker(sel, entries);
+    setStatus(open);
+
+    const onClock = !!open;
+    const onBreak = !!(open && open.break_start && !open.break_end);
+
+    punchInBtn.disabled = (sel === "ALL") || onClock;
+    punchOutBtn.disabled = (sel === "ALL") || !onClock || onBreak;
+    breakStartBtn.disabled = (sel === "ALL") || !onClock || onBreak || (open && open.break_end);
+    breakEndBtn.disabled = (sel === "ALL") || !(onClock && open.break_start && !open.break_end);
+
+    if(sel === "ALL"){
+      pinHint.textContent = "Select a worker to punch.";
+    }else{
+      const w = getWorker(workers, sel);
+      pinHint.textContent = (w && w.pin) ? "Enter PIN to punch." : "No PIN set yet. Tap “Set / Change PIN”.";
+    }
+
+    document.querySelectorAll("th.managerOnly").forEach(th => th.classList.toggle("hidden", !isManager));
+
+    calcKpis(entries, workers, weekStart);
+    renderTables(entries, workers, weekStart);
+
+    diagEl.innerHTML =
+      "Diagnostics:" +
+      "<br>• JavaScript: <span class='pill ok'>Running</span>" +
+      "<br>• localStorage: " + (HAS_LS ? "<span class='pill ok'>Available</span>" : "<span class='pill bad'>Blocked</span> (won’t save after closing)") +
+      "<br>• Entries stored: <code>" + entries.length + "</code>";
+  }
+
+  // ---------------- Worker management (manager only) ----------------
+  function addWorker(){
+    if(!isManager){ alert("Manager Mode required."); return; }
+    const name = prompt("New worker name:");
+    if(!name) return;
+    const workers = loadWorkers();
+    workers.push({ id: uuid(), name: name.trim(), pin: "" });
+    saveWorkers(workers);
+    workerSelect.value = workers[workers.length-1].id;
+    refresh();
+  }
+
+  function renameWorker(){
+    if(!isManager){ alert("Manager Mode required."); return; }
+    const sel = selectedWorkerId();
+    if(sel === "ALL"){ alert("Select a worker first."); return; }
+    const workers = loadWorkers();
+    const w = getWorker(workers, sel);
+    if(!w){ alert("Worker not found."); return; }
+    const newName = prompt("Rename worker:", w.name);
+    if(!newName) return;
+    w.name = newName.trim();
+    saveWorkers(workers);
+    refresh();
+  }
+
+  function removeWorker(){
+    if(!isManager){ alert("Manager Mode required."); return; }
+    const sel = selectedWorkerId();
+    if(sel === "ALL"){ alert("Select a worker first."); return; }
+    if(!confirm("Remove this worker? Imported/old shifts will remain unless you delete them too.")) return;
+    const workers = loadWorkers().filter(w => w.id !== sel);
+    saveWorkers(workers);
+    workerSelect.value = "ALL";
+    refresh();
+  }
+
+  // ---------------- Punch actions (require correct worker PIN) ----------------
+  function punchIn(){
+    const workers = loadWorkers();
+    const entries = loadEntries();
+    const sel = requireWorkerSelected();
+    if(!sel) return;
+    if(!verifyWorkerPinOrAlert(workers, sel)) return;
+
+    if(openShiftForWorker(sel, entries)){
+      alert("This worker is already punched in.");
+      return;
+    }
+    const now = new Date();
+    entries.push({
+      id: uuid(),
+      workerId: sel,
+      job: jobInput.value.trim(),
+      date: localISODate(now),
+      in: now.toISOString(),
+      out: null,
+      break_start: null,
+      break_end: null,
+      source: "local"
+    });
+    saveEntries(entries);
+    pinInput.value = "";
+    refresh();
+  }
+
+  function punchOut(){
+    const workers = loadWorkers();
+    const entries = loadEntries();
+    const sel = requireWorkerSelected();
+    if(!sel) return;
+    if(!verifyWorkerPinOrAlert(workers, sel)) return;
+
+    const open = openShiftForWorker(sel, entries);
+    if(!open){ alert("No active punch-in for this worker."); return; }
+    if(open.break_start && !open.break_end){ alert("End meal break before punching out."); return; }
+    open.out = new Date().toISOString();
+    saveEntries(entries);
+    pinInput.value = "";
+    refresh();
+  }
+
+  function startBreak(){
+    const workers = loadWorkers();
+    const entries = loadEntries();
+    const sel = requireWorkerSelected();
+    if(!sel) return;
+    if(!verifyWorkerPinOrAlert(workers, sel)) return;
+
+    const open = openShiftForWorker(sel, entries);
+    if(!open){ alert("Worker must be punched in first."); return; }
+    if(open.break_start){ alert("Meal break already used for this shift."); return; }
+    open.break_start = new Date().toISOString();
+    open.break_end = null;
+    saveEntries(entries);
+    pinInput.value = "";
+    refresh();
+  }
+
+  function endBreak(){
+    const workers = loadWorkers();
+    const entries = loadEntries();
+    const sel = requireWorkerSelected();
+    if(!sel) return;
+    if(!verifyWorkerPinOrAlert(workers, sel)) return;
+
+    const open = openShiftForWorker(sel, entries);
+    if(!open || !open.break_start || open.break_end){ alert("No active meal break."); return; }
+    open.break_end = new Date().toISOString();
+    saveEntries(entries);
+    pinInput.value = "";
+    refresh();
+  }
+
+  // ---------------- Manager-only shift editing ----------------
+  function normalizeTime(t){
+    const parts = t.split(":");
+    if(parts.length !== 2) return t;
+    const hh = pad2(parseInt(parts[0],10));
+    const mm = pad2(parseInt(parts[1],10));
+    return `${hh}:${mm}`;
+  }
+
+  function toISOFromLocal(dateISO, timeStr){
+    const [y,m,d] = dateISO.split("-").map(Number);
+    const [hh,mm] = timeStr.split(":").map(Number);
+    const dt = new Date(y, m-1, d, hh, mm, 0, 0);
+    return dt.toISOString();
+  }
+
+  function editEntry(entryId){
+    if(!isManager){ alert("Manager Mode required."); return; }
+    const entries = loadEntries();
+    const e = entries.find(x => x.id === entryId);
+    if(!e){ alert("Entry not found."); return; }
+
+    alert("Edit times using 24h time like 09:15. Leave blank to keep current.");
+    const newDate = prompt("Date (YYYY-MM-DD):", e.date);
+    if(newDate === null) return;
+
+    const inTime = prompt("Punch In time (HH:MM):", e.in ? new Date(e.in).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false}) : "");
+    if(inTime === null) return;
+    const outTime = prompt("Punch Out time (HH:MM) (blank = still open):", e.out ? new Date(e.out).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false}) : "");
+    if(outTime === null) return;
+
+    const bsTime = prompt("Break Start (HH:MM) (blank = none):", e.break_start ? new Date(e.break_start).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false}) : "");
+    if(bsTime === null) return;
+    const beTime = prompt("Break End (HH:MM) (blank = none):", e.break_end ? new Date(e.break_end).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false}) : "");
+    if(beTime === null) return;
+
+    const job = prompt("Job/Role:", e.job || "");
+    if(job === null) return;
+
+    e.date = (newDate.trim() || e.date);
+
+    if(inTime.trim()) e.in = toISOFromLocal(e.date, normalizeTime(inTime.trim()));
+    if(outTime.trim()) e.out = toISOFromLocal(e.date, normalizeTime(outTime.trim()));
+    else e.out = null;
+
+    if(bsTime.trim()) e.break_start = toISOFromLocal(e.date, normalizeTime(bsTime.trim()));
+    else e.break_start = null;
+
+    if(beTime.trim()) e.break_end = toISOFromLocal(e.date, normalizeTime(beTime.trim()));
+    else e.break_end = null;
+
+    e.job = job.trim();
+
+    if(confirm("Save changes?")){
+      saveEntries(entries);
+      refresh();
+      if(confirm("Delete this shift entry?")){
+        saveEntries(loadEntries().filter(x => x.id !== entryId));
+        refresh();
+      }
+    }
+  }
+
+  // ---------------- Clear / export ----------------
+  function clearWeek(){
+    if(!isManager){ alert("Manager Mode required."); return; }
+    if(!confirm("Clear ALL shifts in the selected week on this device? This cannot be undone.")) return;
+    const weekStart = parseDateInput(weekStartInput.value);
+    saveEntries(loadEntries().filter(e => !dateInWeek(e.date, weekStart)));
+    refresh();
+  }
+
+  function exportCSV(scope){
+    const workers = loadWorkers();
+    const entries = loadEntries();
+    const weekStart = parseDateInput(weekStartInput.value);
+    const sel = selectedWorkerId();
+
+    let rows = entries.slice();
+    if(scope === "WEEK") rows = rows.filter(e => dateInWeek(e.date, weekStart));
+    if(sel !== "ALL") rows = rows.filter(e => e.workerId === sel);
+    rows.sort((a,b)=> (a.date === b.date ? (new Date(a.in) - new Date(b.in)) : a.date.localeCompare(b.date)));
+
+    const header = ["Business","Worker","Job/Role","Date","In","Break Start","Break End","Out","Break Minutes","Net Hours","Weekly Regular","Weekly OT","Source"];
+    let csv = header.join(",") + "\n";
+
+    function csvEscape(s){
+      const str = String(s ?? "");
+      if(/[",\n]/.test(str)) return '"' + str.replace(/"/g,'""') + '"';
+      return str;
+    }
+
+    // Weekly totals for each worker (selected week)
+    const weekTotals = new Map();
+    for(const w of workers) weekTotals.set(w.id, calcWeeklyForWorker(entries, weekStart, w.id));
+
+    for(const e of rows){
+      const workerName = getWorkerName(workers, e.workerId);
+      const bmin = breakMin(e);
+      const nh = netHours(e);
+      const t = weekTotals.get(e.workerId) || {reg:0,ot:0};
+      const row = [
+        "Botanical San Miguel",
+        workerName,
+        e.job || "",
+        e.date,
+        e.in,
+        e.break_start || "",
+        e.break_end || "",
+        e.out || "",
+        bmin,
+        (nh === null ? "" : nh.toFixed(2)),
+        t.reg.toFixed(2),
+        t.ot.toFixed(2),
+        e.source || "local"
+      ].map(csvEscape).join(",");
+      csv += row + "\n";
+    }
+
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const fileTag = (scope === "WEEK") ? "week" : "all";
+    const workerTag = (sel === "ALL") ? "all-workers" : "worker";
+    a.href = url;
+    a.download = `bsm_timeclock_${fileTag}_${workerTag}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ---------------- CSV Import (manager) ----------------
+  function splitCSVLine(line){
+    // Handles quoted commas and escaped quotes
+    const out = [];
+    let cur = "";
+    let inQuotes = false;
+    for(let i=0;i<line.length;i++){
+      const ch = line[i];
+      if(ch === '"'){
+        if(inQuotes && line[i+1] === '"'){ cur += '"'; i++; }
+        else inQuotes = !inQuotes;
+      }else if(ch === ',' && !inQuotes){
+        out.push(cur);
+        cur = "";
+      }else{
+        cur += ch;
+      }
+    }
+    out.push(cur);
+    return out;
+  }
+
+  function parseCSV(text){
+    const lines = text.replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n").filter(l => l.trim().length>0);
+    if(!lines.length) return { headers: [], rows: [] };
+
+    const headers = splitCSVLine(lines[0]).map(h => h.trim());
+    const rows = [];
+    for(let i=1;i<lines.length;i++){
+      const cols = splitCSVLine(lines[i]);
+      const obj = {};
+      for(let j=0;j<headers.length;j++){
+        obj[headers[j]] = (cols[j] ?? "").trim().replace(/^"(.*)"$/,"$1");
+      }
+      rows.push(obj);
+    }
+    return { headers, rows };
+  }
+
+  function entryFingerprint(workerName, inISO, outISO){
+    // Stable id to dedupe imports: worker + in + out
+    return "imp_" + (workerName || "").toLowerCase().trim().replace(/\s+/g,"_") + "_" + (inISO || "") + "_" + (outISO || "");
+  }
+
+  function ensureWorkerByName(workers, name){
+    let w = getWorkerByName(workers, name);
+    if(w) return w;
+    w = { id: uuid(), name: name.trim(), pin: "" };
+    workers.push(w);
+    return w;
+  }
+
+  async function importSelectedCSVs(){
+    if(!isManager){ alert("Manager Mode required."); return; }
+    const files = importFiles.files;
+    if(!files || !files.length){ alert("Choose one or more CSV files first."); return; }
+
+    let workers = loadWorkers();
+    let entries = loadEntries();
+    const existingIds = new Set(entries.map(e => e.id));
+
+    let added = 0, skipped = 0, bad = 0;
+
+    for(const file of files){
+      const text = await file.text();
+      const parsed = parseCSV(text);
+      // Expect at least Worker, Date, In columns
+      if(!parsed.headers.length || (!parsed.headers.includes("Worker") && !parsed.headers.includes("Worker Name"))){
+        bad++;
+        continue;
+      }
+
+      for(const r of parsed.rows){
+        const workerName = (r["Worker"] || r["Worker Name"] || "").trim();
+        const date = (r["Date"] || "").trim();
+        const inISO = (r["In"] || r["Punch In"] || "").trim();
+        const outISO = (r["Out"] || r["Punch Out"] || "").trim();
+        const bs = (r["Break Start"] || r["BreakStart"] || "").trim();
+        const be = (r["Break End"] || r["BreakEnd"] || "").trim();
+        const job = (r["Job/Role"] || r["Job"] || r["Role"] || "").trim();
+
+        if(!workerName || !date || !inISO){
+          bad++;
+          continue;
+        }
+
+        const w = ensureWorkerByName(workers, workerName);
+        const id = entryFingerprint(workerName, inISO, outISO);
+        if(existingIds.has(id)){
+          skipped++;
+          continue;
+        }
+        existingIds.add(id);
+
+        entries.push({
+          id,
+          workerId: w.id,
+          job,
+          date,
+          in: inISO,
+          out: outISO || null,
+          break_start: bs || null,
+          break_end: be || null,
+          source: "import"
+        });
+        added++;
+      }
+    }
+
+    saveWorkers(workers);
+    saveEntries(entries);
+    importFiles.value = "";
+    importResult.textContent = `Imported: ${added} shifts • Skipped duplicates: ${skipped} • Bad rows/files: ${bad}`;
+    refresh();
+  }
+
+  function removeImportedWeek(){
+    if(!isManager){ alert("Manager Mode required."); return; }
+    const weekStart = parseDateInput(weekStartInput.value);
+    if(!confirm("Remove imported shifts in the selected week (source=import)?")) return;
+    const entries = loadEntries().filter(e => !(e.source === "import" && dateInWeek(e.date, weekStart)));
+    saveEntries(entries);
+    refresh();
+    importResult.textContent = "Removed imported shifts for selected week.";
+  }
+
+  // ---------------- Init ----------------
+  function initWeek(){ setWeekUI(mondayOf(new Date())); }
+
+  // Wire buttons
+  mgrBtn.addEventListener("click", managerLogin);
+  mgrLogoutBtn.addEventListener("click", managerLogout);
+
+  $("addWorkerBtn").addEventListener("click", addWorker);
+  $("renameWorkerBtn").addEventListener("click", renameWorker);
+  $("removeWorkerBtn").addEventListener("click", removeWorker);
+  $("resetPinBtn").addEventListener("click", resetPinManager);
+
+  $("setPinBtn").addEventListener("click", setOrChangePin);
+
+  punchInBtn.addEventListener("click", punchIn);
+  punchOutBtn.addEventListener("click", punchOut);
+  breakStartBtn.addEventListener("click", startBreak);
+  breakEndBtn.addEventListener("click", endBreak);
+
+  $("exportWeekBtn").addEventListener("click", ()=>exportCSV("WEEK"));
+  $("exportAllBtn").addEventListener("click", ()=>exportCSV("ALL"));
+  $("clearWeekBtn").addEventListener("click", clearWeek);
+
+  workerSelect.addEventListener("change", refresh);
+  weekStartInput.addEventListener("change", () => { setWeekUI(parseDateInput(weekStartInput.value)); refresh(); });
+
+  $("thisWeekBtn").addEventListener("click", () => { setWeekUI(mondayOf(new Date())); refresh(); });
+  $("prevWeekBtn").addEventListener("click", () => { setWeekUI(addDays(parseDateInput(weekStartInput.value), -7)); refresh(); });
+  $("nextWeekBtn").addEventListener("click", () => { setWeekUI(addDays(parseDateInput(weekStartInput.value), 7)); refresh(); });
+
+  importBtn.addEventListener("click", importSelectedCSVs);
+  clearImportedWeekBtn.addEventListener("click", removeImportedWeek);
+
+  window.addEventListener("DOMContentLoaded", () => {
+    initWeek();
+    refresh();
+  });
+})();
 </script>
 </body>
 </html>
